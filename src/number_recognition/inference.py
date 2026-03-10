@@ -2,12 +2,13 @@
 from torchvision import datasets
 from torchvision import transforms
 
-from .models import Network
+from .models import Network, CNN
 
 
 def infer(
     test_root: str = "./mnist_test",
     model_path: str = "./mnist.pth",
+    model_type: str = "cnn",
 ) -> None:
     transform = transforms.Compose([
         transforms.Grayscale(num_output_channels=1),
@@ -17,7 +18,14 @@ def infer(
     test_dataset = datasets.ImageFolder(root=test_root, transform=transform)
     print("test_dataset length: ", len(test_dataset))
 
-    model = Network()
+    # 选择模型类型
+    if model_type.lower() == "cnn":
+        model = CNN()
+        print(f"使用 CNN 模型进行推理")
+    else:
+        model = Network()
+        print(f"使用 MLP 模型进行推理")
+    
     model.load_state_dict(torch.load(model_path))
 
     right = 0

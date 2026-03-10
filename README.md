@@ -1,17 +1,33 @@
 # NumberRecognition
 
 ## 项目说明
-本仓库基于 NumberRecognition 原始仓库 fork 而来，用于结构优化与实验测试。
+本仓库基于 NumberRecognition 原始仓库 fork 而来，用于代码复现、结构优化与实验测试。
 
-当前重构重点是：
-- 不改变核心功能（数据解析、训练、推理）
-- 优化代码组织结构，提升可读性与可维护性
-- 保留原有脚本入口，保证向后兼容
+**mainwithup 分支：** CNN 改进版本，使用卷积神经网络替代原有的 MLP 模型。
 
 ## 功能概览
 - MNIST 原始 idx 数据解析为按类别分目录的 PNG 数据集
-- 基于 PyTorch 的 MLP（全连接网络）训练
+- 基于 PyTorch 的卷积神经网络（CNN）训练（支持切换到 MLP）
 - 使用训练后的权重进行推理并输出准确率
+
+## 模型架构（CNN）
+```
+Input(1x28x28)
+  ↓
+Conv2d(1→6, 5x5) + ReLU + MaxPool(2x2)
+  ↓ (6x14x14)
+Conv2d(6→16, 5x5) + ReLU + MaxPool(2x2)
+  ↓ (16x5x5)
+Flatten
+  ↓
+FC(400→120) + ReLU
+  ↓
+FC(120→84) + ReLU
+  ↓
+FC(84→10)
+  ↓
+Output(10)
+```
 
 ## 快速开始
 ```bash
@@ -20,6 +36,22 @@ python parse_train_images_labels.py
 python parse_t10k_images_labels.py
 python model_train.py
 python model_inference.py
+```
+
+## 模型选择与自定义运行
+默认使用 CNN 模型训练和推理。如需使用 MLP（原始模型），可按如下方式修改：
+
+**Python 脚本中调用：**
+```python
+# 训练时选择模型
+from src.number_recognition.train import train
+train(model_type="cnn")    # CNN（推荐，默认）
+train(model_type="mlp")    # MLP（原始）
+
+# 推理时选择模型
+from src.number_recognition.inference import infer
+infer(model_type="cnn")    # CNN
+infer(model_type="mlp")    # MLP
 ```
 
 ## 重构后代码结构
@@ -31,9 +63,11 @@ NumberRecognition/
 │     │  ├─ prepare_train.py
 │     │  └─ prepare_test.py
 │     ├─ models/
-│     │  └─ mlp.py
-│     ├─ train.py
-│     └─ inference.py
+│     │  ├─ mlp.py          （原有的全连接网络）
+│     │  ├─ cnn.py          （新增的卷积神经网络）
+│     │  └─ __init__.py
+│     ├─ train.py           （支持模型选择）
+│     └─ inference.py       （支持模型选择）
 ├─ model.py
 ├─ model_train.py
 ├─ model_inference.py
@@ -60,11 +94,28 @@ python -m src.number_recognition.inference
 
 ## 数据与结果
 - 原始数据目录：MNIST_data/
-- 解析后训练集：mnist_train/
-- 解析后测试集：mnist_test/
+- 解析后训练集：mnist_train/（60,000张图片）
+- 解析后测试集：mnist_test/（10,000张图片）
 - 模型权重：mnist.pth
 
-历史基线结果示例：测试准确率约 97.77%。
+### 模型性能对比
+
+| 模型 | 网络结构 | 参数量 | 预期准确率 | 备注 |
+|-----|--------|------|---------|------|
+| MLP | 784→256→10 | ~200K | ~97.8% | 原始基线模型 |
+| CNN | Conv(1→6)→Conv(6→16)→FC(120)→FC(84)→FC(10) | ~36K | ~99%+ | 卷积提取特征，性能更优，参数更少 |
+
+### 历史实验结果
+
+**MLP 模型（mainwithcn）:**
+- 测试准确率：9781/10000 = 97.81%
+- 训练轮数：10 epochs
+- 关键性能：loss 从 2.3043 下降到 0.0058
+
+**CNN 模型（mainwithup）:**
+- 待测试更新中...
+
+使用 CNN 可以预期获得 1-2% 的性能提升，同时参数量减少约 80%。
 
 ## 致谢
 - MNIST 数据集：Yann LeCun 团队

@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 from torchvision import datasets
 from torchvision import transforms
 
-from .models import Network
+from .models import Network, CNN
 
 
 def train(
@@ -14,6 +14,7 @@ def train(
     model_path: str = "./mnist.pth",
     batch_size: int = 64,
     epochs: int = 10,
+    model_type: str = "cnn",
 ) -> None:
     transform = transforms.Compose([
         transforms.Grayscale(num_output_channels=1),
@@ -35,7 +36,13 @@ def train(
         print("label.shape: ", label.shape)
         print(label)
 
-    model = Network()
+    # 选择模型类型
+    if model_type.lower() == "cnn":
+        model = CNN()
+        print(f"使用 CNN 模型进行训练")
+    else:
+        model = Network()
+        print(f"使用 MLP 模型进行训练")
     optimizer = optim.Adam(model.parameters())
     criterion = nn.CrossEntropyLoss()
 
